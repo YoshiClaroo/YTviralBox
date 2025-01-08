@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor de Videos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff; /* Fondo blanco */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            color: #000; /* Texto negro */
+        }
+        h1 {
+            margin-bottom: 20px; /* Espacio entre el título y el video */
+        }
+        iframe {
+            width: 100%; /* Ajustar el ancho al 100% */
+            height: 80%; /* Ajustar la altura */
+            max-width: 600px; /* Ancho máximo para mantener la proporción */
+            max-height: 400px; /* Altura máxima */
+            border-radius: 8px; /* Bordes redondeados */
+        }
+        #counter {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 10px;
+            background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente */
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff; /* Texto blanco en el contador */
+        }
+        #acumulado {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 10px;
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff; /* Texto blanco en el acumulado */
+        }
+    </style>
+</head>
+<body>
+
+<h1>Mira videos para tener visitas</h1>
+<iframe id="videoPlayer" src="" frameborder="0" allowfullscreen></iframe>
+<div id="counter">Segundos restantes: 0</div>
+<div id="acumulado">Tiempo acumulado: 0 minutos</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getFirestore, getDocs, collection, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCCRjzn7GfvI4hDWp5UasoSUkkL--B7FoY",
+        authDomain: "viewviral-e060d.firebaseapp.com",
+        projectId: "viewviral-e060d",
+        storageBucket: "viewviral-e060d.appspot.com",
+        messagingSenderId: "873081340856",
+        appId: "1:873081340856:web:2232c0217eb5e8f1acc54d",
+        measurementId: "G-1P77T7N6P3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const videoPlayer = document.getElementById('videoPlayer');
+    const counter = document.getElementById('counter');
+    const acumulado = document.getElementById('acumulado');
+    let totalTiempoVistoPorUsuario = 0; // Acumulador para los segundos vistos por el usuario
+    let duration = 0; // Duración inicial
+    let counterInterval;
+    let videos = [];
+
+    async function loadVideos() {
+        const querySnapshot = await getDocs(collection(db, "videos"));
+        if (!querySnapshot.empty) {
+            videos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            playRandomVideo(); // Inicia el primer video de manera aleatoria
+        } else {
+            counter.innerText = "No hay videos disponibles.";
+        }
+    }
+
+    function playRandomVideo() {
+        // Seleccionar un video al azar
+        const randomIndex = Math.floor(Math.random() * videos.length);
+        const video = videos[randomIndex];
+        videoPlayer.src = video.url;
+        duration = parseInt(video.duration, 10); // La duración del video en segundos
+        counter.innerText = `Segundos restantes: ${duration}`;
+        startCounter(video.id);
+    }
+
+    function startCounter(videoId) {
+        clearInterval(counterInterval);
+        counterInterval = setInterval(async () => {
+            if (duration > 0) {
+                duration--;
+                totalTiempoVistoPorUsuario++;
+                counter.innerText = `Segundos restantes: ${duration}`;
+                acumulado.innerText = `Tiempo acumulado: ${Math.floor(totalTiempoVistoPorUsuario / 60)} minutos`;
+            } else {
+                clearInterval(counterInterval);
+                await updateVideoData(videoId);
+                playRandomVideo(); // Cargar un video aleatorio después de que termine el actual
+            }
+        }, 1000);
+    }
+
+    async function updateVideoData(videoId) {
+        const videoDocRef = doc(db, "videos", videoId);
+        const videoDoc = await getDoc(videoDocRef);
+        
+        if (videoDoc.exists()) {
+            const videoData = videoDoc.data();
+
+            // Actualizar los minutos vistos
+            await updateDoc(videoDocRef, {
+                minutos_vistos_usuario: (videoData.minutos_vistos_usuario || 0) + Math.ceil(totalTiempoVistoPorUsuario / 60) // Acumular en minutos
+            });
+
+            // Lógica para permitir que el video del usuario se muestre
+            if (totalTiempoVistoPorUsuario >= 600) { // 10 minutos en segundos
+                await updateDoc(videoDocRef, {
+                    estado_video: "activo"
+                });
+            } else {
+                await updateDoc(videoDocRef, {
+                    estado_video: "pausado"
+                });
+            }
+        }
+    }
+
+    loadVideos(); // Cargar los videos al inicio
+</script>
+
+</body>
+</html>
