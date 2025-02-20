@@ -1,146 +1,499 @@
 <!DOCTYPE html>
-<html lang="es">
+
+<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor de Videos</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #fff; /* Fondo blanco */
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            justify-content: center;
-            align-items: center;
-            color: #000; /* Texto negro */
-        }
-        h1 {
-            margin-bottom: 20px; /* Espacio entre el título y el video */
-        }
-        iframe {
-            width: 100%; /* Ajustar el ancho al 100% */
-            height: 80%; /* Ajustar la altura */
-            max-width: 600px; /* Ancho máximo para mantener la proporción */
-            max-height: 400px; /* Altura máxima */
-            border-radius: 8px; /* Bordes redondeados */
-        }
-        #counter {
-            font-size: 24px;
-            text-align: center;
-            margin-top: 10px;
-            background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente */
-            padding: 10px;
-            border-radius: 5px;
-            color: #fff; /* Texto blanco en el contador */
-        }
-        #acumulado {
-            font-size: 24px;
-            text-align: center;
-            margin-top: 10px;
-            background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
-            padding: 10px;
-            border-radius: 5px;
-            color: #fff; /* Texto blanco en el acumulado */
-        }
-    </style>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Balance & Withdraw</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      background-color: #f4f7fc;
+
+      margin: 0;
+
+      padding: 0;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      color: #333;
+
+    }
+
+
+
+    .container {
+
+      max-width: 500px;
+
+      width: 100%;
+
+      background: #fff;
+
+      padding: 20px;
+
+      border-radius: 8px;
+
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+      text-align: center;
+
+      margin-top: 20px;
+
+    }
+
+
+
+    h2 {
+
+      color: #3c3c3c;
+
+      font-size: 24px;
+
+      font-weight: 600;
+
+      margin: 20px 0;
+
+    }
+
+
+
+    .button {
+
+      padding: 12px;
+
+      background-color: #007bff;
+
+      color: white;
+
+      border: none;
+
+      border-radius: 4px;
+
+      cursor: pointer;
+
+      font-size: 16px;
+
+      margin: 5px;
+
+      width: 100%;
+
+      max-width: 200px;
+
+      transition: background-color 0.3s, transform 0.2s;
+
+    }
+
+
+
+    .button:hover {
+
+      background-color: #0056b3;
+
+      transform: translateY(-3px);
+
+    }
+
+
+
+    .button:disabled {
+
+      background-color: #ddd;
+
+      cursor: not-allowed;
+
+    }
+
+
+
+    .input-field {
+
+      padding: 10px;
+
+      width: 100%;
+
+      font-size: 16px;
+
+      border: 1px solid #ccc;
+
+      border-radius: 4px;
+
+      margin: 10px 0;
+
+    }
+
+
+
+    .balance-container, .buttons-container {
+
+      margin-top: 20px;
+
+    }
+
+
+
+    .timer {
+
+      font-size: 18px;
+
+      color: #f44336;
+
+      font-weight: bold;
+
+      margin-top: 10px;
+
+    }
+
+
+
+    .alert {
+
+      background-color: #ff9800;
+
+      color: white;
+
+      padding: 10px;
+
+      margin: 15px 0;
+
+      border-radius: 5px;
+
+      display: none;
+
+    }
+
+
+
+    #login-register-container {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      margin-bottom: 20px;
+
+    }
+
+
+
+    #login-register-container .button {
+
+      width: 45%;
+
+    }
+
+
+
+    .card {
+
+      background: #f7f7f7;
+
+      padding: 20px;
+
+      border-radius: 8px;
+
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+
+      margin-top: 20px;
+
+    }
+
+
+
+    /* Responsive Design */
+
+    @media (max-width: 768px) {
+
+      .container {
+
+        padding: 20px 15px;
+
+      }
+
+
+
+      .button {
+
+        padding: 10px;
+
+        font-size: 14px;
+
+      }
+
+
+
+      h2 {
+
+        font-size: 20px;
+
+      }
+
+
+
+      .timer {
+
+        font-size: 16px;
+
+      }
+
+    }
+
+  </style>
+
 </head>
+
 <body>
 
-<h1>Mira videos para tener visitas</h1>
-<iframe id="videoPlayer" src="" frameborder="0" allowfullscreen></iframe>
-<div id="counter">Segundos restantes: 0</div>
-<div id="acumulado">Tiempo acumulado: 0 minutos</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getFirestore, getDocs, collection, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCCRjzn7GfvI4hDWp5UasoSUkkL--B7FoY",
-        authDomain: "viewviral-e060d.firebaseapp.com",
-        projectId: "viewviral-e060d",
-        storageBucket: "viewviral-e060d.appspot.com",
-        messagingSenderId: "873081340856",
-        appId: "1:873081340856:web:2232c0217eb5e8f1acc54d",
-        measurementId: "G-1P77T7N6P3"
-    };
+<div class="container">
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const videoPlayer = document.getElementById('videoPlayer');
-    const counter = document.getElementById('counter');
-    const acumulado = document.getElementById('acumulado');
-    let totalTiempoVistoPorUsuario = 0; // Acumulador para los segundos vistos por el usuario
-    let duration = 0; // Duración inicial
-    let counterInterval;
-    let videos = [];
+  <div id="login-register-container">
 
-    async function loadVideos() {
-        const querySnapshot = await getDocs(collection(db, "videos"));
-        if (!querySnapshot.empty) {
-            videos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            playRandomVideo(); // Inicia el primer video de manera aleatoria
-        } else {
-            counter.innerText = "No hay videos disponibles.";
-        }
+    <button id="registerButton" class="button">Register</button>
+
+    <button id="loginButton" class="button">Login</button>
+
+  </div>
+
+
+
+  <div id="email-container" style="display:none;">
+
+    <h2>Enter your email to start:</h2>
+
+    <input type="email" id="userEmail" class="input-field" placeholder="Enter email" required>
+
+    <button id="submitEmail" class="button">Submit</button>
+
+  </div>
+
+প্রতি তিনটা টাস্ক কমপ্লিট করার পর চার নাম্বারে গিয়ে আপনি ওপেন করে সেটাতে সাইনআপ করবেন অন্যথায় আপনার পেমেন্ট পাবেন না
+
+
+
+  <div id="balance-container" class="balance-container" style="display: none;">
+
+    <h2>Your Current Balance:</h2>
+
+    <div class="card">
+
+      <p id="balance" style="font-size: 24px; font-weight: bold;">0</p>
+
+      <button id="withdraw" class="button">Withdraw</button>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="buttons-container" class="buttons-container" style="display: none;">
+
+    <h2>Earn Points:</h2>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 2')">Visit Site 2</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 3')">Visit Site 3</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 1')">Singup Here 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://saikaithee.net/4/6925934', 'Visit 1')">Singup Here 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Visit Site 1</button>
+
+    <button class="button" onclick="visitSiteAndEarnPoints('https://example1.com', 'Visit 1')">Singup Here 1</button>
+
+  </div>
+
+
+
+  <p id="timer" class="timer"></p>
+
+</div>
+
+
+
+<script>
+
+  let balance = 0;
+
+  let userEmail = "";
+
+  const visitHistory = {};
+
+
+
+  document.getElementById("registerButton").addEventListener("click", () => handleUserRegistration());
+
+  document.getElementById("loginButton").addEventListener("click", () => handleUserLogin());
+
+
+
+  function handleUserRegistration() {
+
+    document.getElementById("login-register-container").style.display = "none";
+
+    document.getElementById("email-container").style.display = "block";
+
+    document.getElementById("submitEmail").addEventListener("click", () => {
+
+      const email = document.getElementById("userEmail").value;
+
+      if (email) {
+
+        userEmail = email;
+
+        localStorage.setItem("userEmail", userEmail);
+
+        document.getElementById("email-container").style.display = "none";
+
+        document.getElementById("balance-container").style.display = "block";
+
+        document.getElementById("buttons-container").style.display = "block";
+
+      }
+
+    });
+
+  }
+
+
+
+  function handleUserLogin() {
+
+    document.getElementById("login-register-container").style.display = "none";
+
+    document.getElementById("email-container").style.display = "block";
+
+    document.getElementById("submitEmail").addEventListener("click", () => {
+
+      const email = document.getElementById("userEmail").value;
+
+      if (localStorage.getItem("userEmail") === email) {
+
+        userEmail = email;
+
+        balance = parseInt(localStorage.getItem("balance") || "0");
+
+        document.getElementById("balance").innerText = balance;
+
+        document.getElementById("email-container").style.display = "none";
+
+        document.getElementById("balance-container").style.display = "block";
+
+        document.getElementById("buttons-container").style.display = "block";
+
+      }
+
+    });
+
+  }
+
+
+
+  function visitSiteAndEarnPoints(url, buttonId) {
+
+    if (visitHistory[buttonId]) return alert("You can only click this button once per day.");
+
+
+
+    const newTab = window.open(url, '_blank');
+
+    let timer = 30;
+
+    document.getElementById("timer").innerText = `Time remaining: ${timer}s`;
+
+
+
+    const interval = setInterval(() => {
+
+      timer--;
+
+      document.getElementById("timer").innerText = `Time remaining: ${timer}s`;
+
+
+
+      if (newTab.closed) {
+
+        clearInterval(interval);
+
+        document.getElementById("timer").innerText = ""; 
+
+        return;
+
+      }
+
+
+
+      if (timer === 0) {
+
+        clearInterval(interval);
+
+        balance += 30;
+
+        document.getElementById("balance").innerText = balance;
+
+        localStorage.setItem("balance", balance);
+
+        visitHistory[buttonId] = Date.now();
+
+        document.getElementById("timer").innerText = ""; 
+
+      }
+
+    }, 1000);
+
+  }
+
+
+
+  document.getElementById("withdraw").addEventListener("click", () => {
+
+    if (balance >= 1000) {
+
+      window.open("https://forms.gle/uNdC6dq6hqzrLnB79", "_blank");
+
+      balance = 0;
+
+      document.getElementById("balance").innerText = balance;
+
+    } else {
+
+      alert("You need at least 1000 points to withdraw.");
+
     }
 
-    function playRandomVideo() {
-        // Seleccionar un video al azar
-        const randomIndex = Math.floor(Math.random() * videos.length);
-        const video = videos[randomIndex];
-        videoPlayer.src = video.url;
-        duration = parseInt(video.duration, 10); // La duración del video en segundos
-        counter.innerText = `Segundos restantes: ${duration}`;
-        startCounter(video.id);
-    }
+  });
 
-    function startCounter(videoId) {
-        clearInterval(counterInterval);
-        counterInterval = setInterval(async () => {
-            if (duration > 0) {
-                duration--;
-                totalTiempoVistoPorUsuario++;
-                counter.innerText = `Segundos restantes: ${duration}`;
-                acumulado.innerText = `Tiempo acumulado: ${Math.floor(totalTiempoVistoPorUsuario / 60)} minutos`;
-            } else {
-                clearInterval(counterInterval);
-                await updateVideoData(videoId);
-                playRandomVideo(); // Cargar un video aleatorio después de que termine el actual
-            }
-        }, 1000);
-    }
-
-    async function updateVideoData(videoId) {
-        const videoDocRef = doc(db, "videos", videoId);
-        const videoDoc = await getDoc(videoDocRef);
-        
-        if (videoDoc.exists()) {
-            const videoData = videoDoc.data();
-
-            // Actualizar los minutos vistos
-            await updateDoc(videoDocRef, {
-                minutos_vistos_usuario: (videoData.minutos_vistos_usuario || 0) + Math.ceil(totalTiempoVistoPorUsuario / 60) // Acumular en minutos
-            });
-
-            // Lógica para permitir que el video del usuario se muestre
-            if (totalTiempoVistoPorUsuario >= 600) { // 10 minutos en segundos
-                await updateDoc(videoDocRef, {
-                    estado_video: "activo"
-                });
-            } else {
-                await updateDoc(videoDocRef, {
-                    estado_video: "pausado"
-                });
-            }
-        }
-    }
-
-    loadVideos(); // Cargar los videos al inicio
 </script>
 
 </body>
+
 </html>
